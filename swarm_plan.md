@@ -1,246 +1,165 @@
 # Project Plan: The Rails 8 Domain Swarm
 
-## 1\. System Philosophy & Stack
+## 1. System Philosophy & Stack
 
-**Objective:** Autonomous construction of a production-ready Rails application. **Core Philosophy:** "Fat Models, Skinny Controllers, Solid Infrastructure."
+**Objective:** Autonomous construction of a production-ready Rails application via specialized agent orchestration.
+**Core Philosophy:** "Fat Models, Skinny Controllers, Solid Infrastructure."
 
-**The Tech Stack:**
-
-* **App:** Ruby 3.4+, Rails 8.X, PostgreSQL.  
-* **Frontend:** Hotwire (Turbo \+ Stimulus), Tailwind CSS v4.  
-* **Infrastructure:** Solid Queue, Solid Cache, Solid Cable.  
-* **Deployment:** Docker \+ Kamal 2\.  
-* **Testing:** Minitest \+ RSpec (Unit) \+ System Tests (Browser) \+ playwright.
+### The Tech Stack
+- **App:** Ruby 3.3+, Rails 8.2+ (Edge), PostgreSQL (Production) / SQLite (Dev).
+- **Frontend:** Hotwire (Turbo + Stimulus), Tailwind CSS v4.
+- **Infrastructure:** The "Solid" Stack (Solid Queue, Solid Cache, Solid Cable).
+- **Deployment:** Docker + Kamal 2.
+- **Testing:** Minitest (Unit/Integration) + Capybara/Cuprite (System).
 
 ---
 
-## 2\. The Agent Swarm Registry
+## 2. The Agent Swarm Registry
 
-The agents are organized by their phase of influence in the Software Development Lifecycle (SDLC).
+The agents are organized by their operational layer. Every agent file serves a specific purpose in the lifecycle.
 
-### Phase 1: Strategy & Definition
+### Phase 1: Product Strategy (The "Why")
 
 #### 1a. The Product Strategist
-
-**Synopsis:** The CEO / Visionary. **What it does:** Defines the *scope* and the *why*. It prevents scope creep by establishing strict boundaries before a single requirement is written. It identifies the Target Audience (Personas), which helps the Phase 2 Domain Modeler decide how complex the user models need to be.
-
-* **Key Tasks:**  
-  * Defines the "North Star" goal of the application.  
-  * Creates User Personas (e.g., "Admin," "Guest," "Power User").  
-  * Sets the MVP Boundaries (what is *not* being built).  
-* **Output:** `product_vision.md` (Scope statement, Persona definitions).
+*File: `agents/product-strategist.md`*
+- **Role:** The Visionary.
+- **Responsibility:** Defines the "North Star," User Personas, and strict MVP boundaries (Anti-Goals).
+- **Output:** `docs/blueprint/product_vision.md`.
 
 #### 1b. The Requirements Specialist
-
-**Synopsis:** The Scribe. **What it does:** The bridge between abstract ideas and concrete lists. This agent converts the Strategist’s vision into a structured list of features. Crucially, **it extracts the "Nouns" (Entities)** that the Phase 2 Domain Modeler will turn into Classes.
-
-* **Key Tasks:**  
-  * Drafts the **Product Requirements Document (PRD)**.  
-  * Explicitly lists "Data Entities" (e.g., *Invoices, LineItems, Customers*).  
-  * Defines Business Rules (e.g., *"An Invoice cannot be deleted after it is sent"*).  
-* **Output:** `requirements_spec.md` (Functional requirements, Entity list, Business Rules).
+*File: `agents/requirements-specialist.md`*
+- **Role:** The Analyst.
+- **Responsibility:** Converts vision into concrete Functional Requirements, Business Rules, and Entity Lists ("Nouns").
+- **Output:** `docs/blueprint/requirements_spec.md`.
 
 #### 1c. The User Journey Mapper
+*File: `agents/user-journey-mapper.md`*
+- **Role:** The UX Director.
+- **Responsibility:** Maps Happy Paths and Sad Paths. Writes Gherkin-style User Stories to define behavior.
+- **Output:** `docs/blueprint/user_stories.md`.
 
-**Synopsis:** The Director. **What it does:** Focuses on the *flow*. It writes the User Stories and Acceptance Criteria. This agent is the primary feeder for the Phase 2 **Design System Lead** (for UI state) and **System Blueprint Lead** (for determining if a flow is simple CRUD or a complex background job).
+### Phase 2: Planning & Architecture (The "How")
 
-* **Key Tasks:**  
-  * Writes Gherkin-style User Stories (*"Given I am an Admin, When I..."*).  
-  * Defines "Sad Paths" and Error States (crucial for Hotwire/Turbo stream error handling).  
-  * Flags interactions that require "Real-time" feedback (indicating a need for ActionCable/Solid Cable).  
-* **Output:** `user_stories.md` (Step-by-step user interactions, Acceptance Criteria).
+#### 2a. The Autopilot Agent
+*File: `agents/autopilot-agent.md`*
+- **Role:** The Product Owner.
+- **Responsibility:** Reads the User Stories and **decomposes** them into the file-based Backlog.
+- **Output:** `docs/planning/epics/*.md` and `docs/planning/tickets/pending/*.md`.
 
-#### 2\. The Technical Librarian
+#### 2b. The Project Manager
+*File: `agents/project-manager.md`*
+- **Role:** The Scrum Master.
+- **Responsibility:** Maintains Kanban integrity. Scans directories to update status JSON and assigns agents to tickets.
+- **Output:** `docs/planning/kanban_state.json`.
 
-**Synopsis:** The Gatekeeper. **What it does:** (Unchanged but refined). It validates the technical feasibility of the requirements generated by agents 1a-1c against the strict Rails 8 / Solid Stack constraints.
+#### 2c. The System Architect
+*File: `agents/system-architect.md`*
+- **Role:** The City Planner.
+- **Responsibility:** Defines directory structure and maps features to infrastructure (e.g., "This needs Solid Queue").
+- **Output:** `docs/blueprint/architecture_map.md`.
 
-* **Key Tasks:**  
-  * **Gem Hunter:** Finds specific Gems to solve the requirements from 1b (e.g., "For the 'Audit Log' requirement, use the `audited` gem").  
-  * **Compatibility Check:** Ensures all selected Gems are compatible with Rails 8, Propshaft, and Turbo.  
-  * **Stack Enforcement:** Rejects any requirement that forces the use of Redis or Node.js, ensuring everything stays within the SQLite/Solid ecosystem.  
-* **Output:** `tech_stack.md` (Approved Gemfile list, configuration constraints).
+#### 2d. The Domain Modeler
+*File: `agents/domain-modeler.md`*
+- **Role:** The Logic Architect.
+- **Responsibility:** Designs Ruby classes, identifies Concerns, and defines Method Signatures *before* coding.
+- **Output:** `docs/blueprint/domain_class_diagram.mermaid`.
 
-### Phase 2: Architecture & Design
+#### 2e. The Schema Architect
+*File: `agents/schema-architect.md`*
+- **Role:** The Database Engineer.
+- **Responsibility:** Translates domain models into rigid SQL schemas (UUIDs, Indexes, Constraints).
+- **Output:** `docs/blueprint/schema_plan.rb`.
 
-#### 3a. The System Blueprint Lead
+#### 2f. The Technical Librarian
+*File: `agents/technical-librarian.md`*
+- **Role:** The Gatekeeper.
+- **Responsibility:** Validates Gem compatibility and enforces the "Solid Stack" (No Node/Redis).
+- **Output:** `docs/blueprint/tech_stack.md`.
 
-**Synopsis:** The City Planner. **What it does:**
+#### 2g. The Design System Lead
+*File: `agents/design-system-lead.md`*
+- **Role:** The Stylist.
+- **Responsibility:** Defines Tailwind configuration, color palettes, and Turbo transition patterns.
+- **Output:** `docs/blueprint/design_system.md`.
 
-* **High-Level Structure:** Defines the directory structure, specifically how `app/models/concerns` are organized (e.g., functional vs. resource-based grouping).  
-* **Component Boundaries:** Decides where the boundary lies between the Frontend (Hotwire) and Backend. It defines which parts of the system are standard CRUD and which are complex workflows requiring specific state machines.  
-* **Infrastructure integration:** Maps the "Solid" stack (Queue, Cache, Cable) to specific domain requirements (e.g., "The 'Report Generation' feature must run in a `solid_queue` background job").  
-* **Artifact:** `architecture_map.md` (Directory trees, Bounded Contexts, Infrastructure mapping).  
-* **Context Docs:**  
-  * `multi-tenant-agent.md`: **Crucial.** Defines if/how the app handles account scoping (e.g., `Current.account`) which affects every other decision.  
-  * `caching-agent.md`: Defines the caching strategy (Russian Doll Caching) which directs how views are structured.  
-  * `jobs-agent.md`: Maps the Solid Queue topology.  
-  * `events-agent.md`: Defines domain events (Pub/Sub) to decouple complex interactions.  
-  * `api-agent.md`: Defines the external interface boundaries early.
+### Phase 3: Construction (The Builders)
 
-#### 3b. The Domain Modeler
+#### 3a. The Implement Agent (Rails Artisan)
+*File: `agents/implement-agent.md`*
+- **Role:** The Lead Engineer / Orchestrator.
+- **Responsibility:** The primary worker. Picks up a Ticket and delegates tasks to the specialized sub-agents below.
 
-**Synopsis:** The Logic Mapper (UML). **What it does:**
+#### The Specialized Sub-Agents:
+1.  **@migration-agent** (`agents/migration-agent.md`): Schema ops, UUIDs, Indexes.
+2.  **@model-agent** (`agents/model-agent.md`): ActiveRecord logic, Associations.
+3.  **@concerns-agent** (`agents/concerns-agent.md`): Shared behavior extraction.
+4.  **@state-records-agent** (`agents/state-records-agent.md`): State machines (No booleans).
+5.  **@crud-agent** (`agents/crud-agent.md`): REST controllers.
+6.  **@api-agent** (`agents/api-agent.md`): JSON APIs, Jbuilder.
+7.  **@auth-agent** (`agents/auth-agent.md`): Authentication, Current attributes.
+8.  **@multi-tenant-agent** (`agents/multi-tenant-agent.md`): Account scoping rules.
+9.  **@turbo-agent** (`agents/turbo-agent.md`): Streams, Frames, Broadcasting.
+10. **@stimulus-agent** (`agents/stimulus-agent.md`): JavaScript behaviors.
+11. **@tailwind-agent** (`agents/tailwind-agent.md`): UI Styling (Views/Components).
+12. **@jobs-agent** (`agents/jobs-agent.md`): Background processing.
+13. **@events-agent** (`agents/events-agent.md`): Domain events, Audit trails.
+14. **@mailer-agent** (`agents/mailer-agent.md`): Transactional emails.
+15. **@caching-agent** (`agents/caching-agent.md`): HTTP/Fragment caching.
+16. **@test-agent** (`agents/test-agent.md`): Writing Minitest/Fixtures.
 
-* **Object-Oriented Design:** Focuses purely on Ruby classes, Modules, and their relationships.  
-* **Concern Extraction:** It explicitly identifies behaviors that span multiple models (e.g., `Commentable`, `Likable`, `approvable`) and isolates them into Concerns.  
-* **Logic Assignment:** It writes the "Method Signatures" for the Models. It strictly enforces "Fat Models" by rejecting Service Objects; if a process involves `User` and `Invoice`, it decides which Model owns the method.  
-* **Artifact:** `domain_class_diagram.mermaid` (A visual representation of Models, Modules/Concerns, and Inheritance).  
-* **Context Docs:**  
-  * `model-agent.md`: Core ActiveRecord patterns.  
-  * `concerns-agent.md`: **High Priority.** This is your replacement for Service Objects. This agent uses this to identify logic that belongs in `app/models/concerns/`.  
-  * `state-records-agent.md`: Instead of just boolean flags, this doc guides the creation of state-machine models (e.g., `Invoice::Draft`, `Invoice::Sent`).  
-  * `auth-agent.md`: Defines User/Account relationships and authorization policies.
+### Phase 4: Maintenance & Optimization
 
-#### 3c. The Schema Architect
+#### 4a. The Refactoring Agent
+*File: `agents/refactoring-agent.md`*
+- **Role:** The Modernizer.
+- **Responsibility:** Audits existing code to fix anti-patterns (e.g., "Convert Service Object to Model Method").
 
-**Synopsis:** The Database Engineer. **What it does:**
+### Phase 5: Quality Assurance (The Guardrails)
 
-* **Data Integrity:** Translates the Domain Modeler's classes into rigid PostgreSQL tables.  
-* **Advanced SQL:** Implements database-level constraints (Check constraints, Foreign Keys, Unique Indexes) to ensure data validity regardless of application bugs.  
-* **Performance:** defines index strategies (including composite indexes) and chooses correct column types (Array, JSONB, UUIDs).  
-* **Artifact:** `schema_plan.rb` (Draft migrations and `schema.rb` definitions).  
-* **Context Docs:**  
-  * `migration-agent.md`: Best practices for strict migrations (safe constraints, index strategies).
+#### 5a. The Code Warden (Review Agent)
+*File: `agents/review-agent.md`*
+- **Role:** Static Analysis.
+- **Responsibility:** Reviews code against style guides. Rejects fat controllers or anemic models.
 
-**4\. The Design System Lead**
+#### 5b. The User Proxy
+*File: `agents/user-proxy.md`*
+- **Role:** Automated QA.
+- **Responsibility:** Runs Capybara System Tests to verify Hotwire interactions (no page reloads).
 
-* **Synopsis:** The Stylist.  
-* **What it does:** Defines the visual language and interaction model. It generates Tailwind v4 specs and dictates how Turbo Frames and Streams should animate and handle user state without custom React/Vue code.  
-* **Context Docs:**  
-  * `turbo-agent.md`: Defines how pages update (Frames vs Streams).  
-  * `stimulus-agent.md`: Defines where JavaScript is allowed (strictly for behavior, not rendering).
+#### 5c. The Playwright Agent
+*File: `agents/playwright-agent.md`*
+- **Role:** Interactive QA.
+- **Responsibility:** "Remote hands" for manual browser navigation, visual verification, and complex E2E flows via CLI.
 
-### Phase 3: Execution & Construction
+#### 5d. The SecOps Sentinel
+*File: `agents/secops-sentinel.md`*
+- **Role:** Security Auditor.
+- **Responsibility:** Checks for Mass Assignment, IDOR (Scoping), and dependency vulnerabilities.
 
-**5\. The Project Manager (PM)**
+### Phase 6: Operations & Documentation
 
-* **Synopsis:** The Orchestrator.  
-* **What it does:** Converts blueprints into a dependency graph. It creates the linear task list, ensuring foundational Models are built before the Controllers that serve them.  
-* **Context Docs:**  
-  * `implement-agent.md`: Used to break down feature requests into technical steps (The "Pattern of Implementation").
+#### 6a. The SRE Agent
+*File: `agents/sre-agent.md`*
+- **Role:** DevOps.
+- **Responsibility:** Generates `Dockerfile` and Kamal `deploy.yml` for production.
 
-**6\. The Rails Artisan**
-
-* **Synopsis:** The Builder.  
-* **What it does:** Writes the Ruby, HTML, and CSS. It implements the logic strictly within Models and Concerns as dictated by the Architect. It writes Unit Tests (RSpec) for every method it creates.  
-* **Context Docs:**  
-  * **The Workflow:** `implement-agent.md` (Follows the step-by-step coding guide).  
-  * **The Backend:** `crud-agent.md` (Standard REST controllers), `model-agent.md`, `concerns-agent.md`, `mailer-agent.md`.  
-  * **The Frontend:** `turbo-agent.md`, `stimulus-agent.md`.  
-  * **The Verification:** `test-agent.md` (Writing the unit/system tests as they build).
-
-### Phase 4: Quality & Verification
-
-**7\. The Code Warden**
-
-* **Synopsis:** The Gatekeeper (Static Analysis).  
-* **What it does:** Reviews the code structure. It rejects "Anemic Models," "Fat Controllers," or messy code. It ensures the implementation matches the Architect's blueprint.  
-* **Context Docs:**  
-  * `review-agent.md`: The rubric for approving PRs.  
-  * `refactoring-agent.md`: Guides for spotting code smells and simplifying logic.  
-  * `concerns-agent.md`: Used to enforce the rule: *"If this controller action is too fat, move it to a Concern, not a Service."*
-
-**8\. The User Proxy**
-
-* **Synopsis:** The Click-Tester (Dynamic Analysis).  
-* **What it does:** Simulates a real human user in a browser. It writes and runs **System Tests (Capybara/Cuprite)**. It validates that buttons actually work, that Turbo Streams update the DOM correctly, and that complex Hotwire interactions function as intended.  
-* **Context Docs:**  
-  * `test-agent.md`: Focuses on the System Testing / Capybara sections to simulate real user clicks.
-
-**9\. The SecOps Sentinel**
-
-* **Synopsis:** The Auditor.  
-* **What it does:** Assumes the code is broken and dangerous. It runs security scans (Brakeman, Bundle Audit) to catch mass-assignment vulnerabilities, SQL injections, and insecure dependencies. It configures the Content Security Policy (CSP).  
-* **Context Docs:**  
-  * `auth-agent.md`: Verifies that `Current.user` or `Current.account` scopes are being respected in every query.
-
-### Phase 5: Operations & Handoff
-
-**10\. The Site Reliability Engineer (SRE)**
-
-* **Synopsis:** The Kamal Commander.  
-* **What it does:** Prepares the app for the real world. It writes the **Dockerfile** (optimized for Rails 8/Thruster) and the **Kamal** `deploy.yml` configuration. It defines the production topology for Solid Queue and Cache.
-
-**11\. The Scribe**
-
-* **Synopsis:** The Technical Writer.  
-* **What it does:** Ensures the project is usable by humans. It generates the `README.md`, documents complex business logic using **YARD**, creates the API documentation (Swagger/OpenAPI), and maintains the [`CHANGELOG.md`](http://CHANGELOG.md).  
-* **Context Docs:**  
-  * `api-agent.md`: Used to generate the OpenAPI/Swagger documentation from the codebase.  
-  * `events-agent.md`: Used to document the system's "Hooks" and Event Bus for external developers.
+#### 6b. The Scribe Agent
+*File: `agents/scribe-agent.md`*
+- **Role:** Technical Writer.
+- **Responsibility:** Generates README, API Docs, and Changelogs based on the final codebase.
 
 ---
 
-## 3\. The Comprehensive Workflow
+## 3. The Autonomous Lifecycle Workflow
 
-This swarm operates in a 5-stage pipeline.
-
-### Stage 1: Definition
-
-1. **PO** creates the PRD.  
-2. **Research** verifies the stack.
-
-### Stage 2: Blueprinting
-
-3. **Domain Architect** creates `schema_plan.json` and `domain_model.md` (defining Models and Concerns).  
-4. **Design Lead** creates `design_system.md` (Tailwind vars & Turbo patterns).
-
-### Stage 3: The Build Loop
-
-5. **PM** issues a task.  
-6. **Artisan** writes code \+ Unit Tests.  
-7. **Code Warden** reviews architecture (Static check).  
-8. **SecOps Sentinel** scans for vulnerabilities (Security check).  
-   * *If Pass:* Proceed to Verification.  
-   * *If Fail:* Return to Artisan.
-
-### Stage 4: Verification
-
-9. **User Proxy** runs System Tests (Browser simulation).  
-   * *Focus:* "Did the Turbo Stream actually append the comment?"  
-   * *If Fail:* Return to Artisan with screenshots/logs.  
-   * *If Pass:* Mark task complete.
-
-### Stage 5: Delivery
-
-10. **SRE** generates deployment config (`deploy.yml`, `Dockerfile`).  
-11. **Scribe** scans the final codebase and generates full documentation.
-
----
-
-## 4\. Agent System Prompt Snippets (New Agents)
-
-### System Instruction: The User Proxy
-
-"You are a QA Automation Engineer specializing in **Rails System Tests**.
-
-- You do not care about code style; you care about **user experience**.  
-- Write tests using Capybara that simulate clicking, filling forms, and waiting for Turbo updates.  
-- **CRITICAL:** You must test Hotwire interactions. assert that the page did *not* reload, but the content changed."
-
-### System Instruction: The SecOps Sentinel
-
-"You are a Security Auditor.
-
-- Your job is to find vulnerabilities in Rails 8 applications.  
-- Check for **Mass Assignment** (strong parameters violations).  
-- Check for **XSS** risks in `html_safe` calls.  
-- Verify that `solid_queue` and `solid_cache` are configured securely.  
-- Enforce a strict Content Security Policy (CSP)."
-
-### System Instruction: The SRE
-
-"You are a DevOps Engineer specializing in **Kamal 2**.
-
-- Output a production-ready `Dockerfile` using the Rails 8 defaults (Thruster, Jemalloc).  
-- Output a `deploy.yml` that defines the web, worker (Solid Queue), and accessory services.  
-- Ensure Traefik is configured for SSL."
-
-### System Instruction: The Scribe
-
-"You are a Technical Writer.
-
-- Read the codebase and the Architect's blueprints.  
-- Create a `README.md` that explains *how to run the app*.  
-- Document the 'Why' behind complex Models using YARD comments.  
-- Explain the Domain Model relationships in plain English.
+1.  **Define:** Strategist + Requirements Specialist + Journey Mapper create the specs.
+2.  **Plan:** Autopilot Agent generates the Backlog. Project Manager tracks it.
+3.  **Design:** Architects (System, Domain, Schema, Design, Librarian) create the Blueprints.
+4.  **Build:** Implement Agent reads Blueprints/Tickets and orchestrates Sub-Agents to write code.
+5.  **Verify:**
+    *   Code Warden checks style.
+    *   SecOps Sentinel checks security.
+    *   User Proxy checks functionality (System Tests).
+    *   Playwright Agent checks visuals (Browser).
+6.  **Refine:** Refactoring Agent optimizes technical debt.
+7.  **Ship:** SRE Agent configures deploy; Scribe Agent writes docs.
