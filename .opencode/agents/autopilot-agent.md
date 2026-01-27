@@ -60,12 +60,15 @@ Instead of processing a static list, you manage the `docs/planning` database.
     - Write Epics to `docs/planning/epics/`.
     - Write Tickets to `docs/planning/tickets/pending/`.
     - Initialize `docs/planning/kanban_state.json`."
+    
+    **Call @qa-manager**:
+    "Initialize Test Plans for all Epics in `docs/planning/epics/`."
 
 13. **The Swarm Loop**
     While `docs/planning/tickets/pending` is not empty:
 
     1. **Scan**: Read `docs/planning/tickets/pending` and `kanban_state.json`.
-    2. **Assign**: Pick the highest priority ticket.
+    2. **Assign**: Pick the highest priority ticket (Bugs > Features > Chores).
     3. **Dispatch**:
        - Move ticket to `docs/planning/tickets/active/T-{id}.md`.
        - Update `kanban_state.json` with assignment.
@@ -73,12 +76,18 @@ Instead of processing a static list, you manage the `docs/planning` database.
          "Execute Ticket `docs/planning/tickets/active/T-{id}.md`.
          - Context: `docs/blueprint/`
          - Definition: [Ticket Content]"
-    4. **Verify**:
+    4. **QA & Verify**:
        - Wait for @implement-agent output.
        - **Call @review-agent**: "Review changes for T-{id}."
-       - **Call @user-proxy**: "Verify T-{id} with system tests."
+       - **Call @qa-manager**: 
+         "Verify T-{id}.
+         - Update/Create Test Case `TC-{id}`.
+         - Run System Tests via `@user-proxy`.
+         - Run Visual Checks via `@playwright-agent`.
+         - If FAIL: File Bug Ticket in pending.
+         - If PASS: Approve."
     5. **Complete**:
-       - Move ticket to `docs/planning/tickets/completed/`.
+       - If QA Passed: Move ticket to `docs/planning/tickets/completed/`.
        - Update `kanban_state.json`.
 
 ### Phase 5: Operations & Delivery

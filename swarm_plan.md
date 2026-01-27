@@ -114,24 +114,32 @@ The agents are organized by their operational layer. Every agent file serves a s
 - **Role:** The Modernizer.
 - **Responsibility:** Audits existing code to fix anti-patterns (e.g., "Convert Service Object to Model Method").
 
-### Phase 5: Quality Assurance (The Guardrails)
+#### 5a. The QA Manager
+*File: `agents/qa-manager.md`*
+- **Role:** QA Lead.
+- **Responsibility:**
+    1.  Creates Test Plans (`TP-*`) linked to Epics.
+    2.  Creates Test Cases (`TC-*`) linked to Tickets.
+    3.  Orchestrates Sub-Agents (`user-proxy`, `playwright-agent`) to verify implementation.
+    4.  Files `T-BUG-*` tickets in the backlog upon failure.
+- **Output:** `docs/planning/test_cases/*` and Bug Tickets.
 
-#### 5a. The Code Warden (Review Agent)
+#### 5b. The Code Warden (Review Agent)
 *File: `agents/review-agent.md`*
 - **Role:** Static Analysis.
 - **Responsibility:** Reviews code against style guides. Rejects fat controllers or anemic models.
 
-#### 5b. The User Proxy
+#### 5c. The User Proxy (Sub-Agent of QA)
 *File: `agents/user-proxy.md`*
-- **Role:** Automated QA.
+- **Role:** Automated Tester.
 - **Responsibility:** Runs Capybara System Tests to verify Hotwire interactions (no page reloads).
 
-#### 5c. The Playwright Agent
+#### 5d. The Playwright Agent (Sub-Agent of QA)
 *File: `agents/playwright-agent.md`*
-- **Role:** Interactive QA.
-- **Responsibility:** "Remote hands" for manual browser navigation, visual verification, and complex E2E flows via CLI.
+- **Role:** Interactive Tester.
+- **Responsibility:** "Remote hands" for visual verification and complex E2E flows via CLI.
 
-#### 5d. The SecOps Sentinel
+#### 5e. The SecOps Sentinel
 *File: `agents/secops-sentinel.md`*
 - **Role:** Security Auditor.
 - **Responsibility:** Checks for Mass Assignment, IDOR (Scoping), and dependency vulnerabilities.

@@ -5,9 +5,13 @@ This document defines the file-based database used for asynchronous agent collab
 ## Directory Structure
 - `docs/planning/epics/`: High-level features (Markdown).
 - `docs/planning/tickets/`: Units of work.
-  - `pending/`: Ready for pickup.
+  - `pending/`: Ready for pickup (Features, Bugs, Chores).
   - `active/`: Currently being implemented by an agent.
   - `completed/`: Finished and verified.
+- `docs/planning/test_cases/`: QA Artifacts.
+  - `plans/`: Test Strategies linked to Epics.
+  - `cases/`: Atomic test scenarios (Gherkin).
+  - `runs/`: Execution reports.
 - `docs/planning/kanban_state.json`: Real-time summary for the Project Manager.
 
 ## Data Schemas
@@ -42,6 +46,29 @@ Implement passwordless authentication using magic links.
 - Reference: `docs/blueprint/domain_class_diagram.mermaid`
 ```
 
+### 3. Test Plan (`TP-{epic_id}.md`)
+```markdown
+# Test Plan: User Authentication
+**Epic:** E-001
+**Strategy:**
+- Unit: Model validations for Email.
+- System: Capybara flow for Magic Link login.
+- E2E: Playwright check for email delivery simulation.
+```
+
+### 4. Test Case (`TC-{ticket_id}-{id}.md`)
+```markdown
+# TC-101-01: Login with Valid Email
+**Linked Ticket:** T-101
+**Type:** Regression | Smoke
+
+Scenario:
+  Given I am on "/login"
+  When I fill "email" with "test@example.com"
+  And I click "Send Magic Link"
+  Then I should see "Check your email"
+```
+
 ## Agent Protocols
 
 ### Checkout Protocol (Pickup)
@@ -50,7 +77,13 @@ Implement passwordless authentication using magic links.
 3. Agent updates `kanban_state.json` adding `"T-101": "@agent_name"`.
 
 ### Completion Protocol (Delivery)
-1. Agent runs tests (GREEN).
+1. Agent runs local tests (GREEN).
 2. Agent moves file to `docs/planning/tickets/completed`.
-3. Agent updates `kanban_state.json` removing assignment.
-4. Agent triggers `@review-agent` on the generated code.
+3. Agent triggers `@qa-manager` for verification.
+
+### QA Protocol (Verification)
+1. `@qa-manager` executes linked Test Cases.
+2. If Pass: Ticket remains in `completed`.
+3. If Fail: 
+   - `@qa-manager` moves ticket back to `active` OR creates new `T-BUG` ticket.
+   - `@qa-manager` generates `docs/planning/tickets/pending/T-BUG-{id}.md`.

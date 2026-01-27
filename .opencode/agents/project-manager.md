@@ -28,8 +28,10 @@ Convert raw requirements into structured Ticket files.
 - **Input:** "We need a comments section."
 - **Output:** `docs/planning/tickets/pending/T-105-add-comments.md` with proper Epic linkage.
 
-### 3. Blockage Resolution
-If a ticket sits in `active/` for too long (simulated), flag it or move it back to `pending/`.
+3. Bug Handling
+Monitor `docs/planning/tickets/pending/` for files starting with T-BUG-.
+- Ensure they are flagged as High Priority.
+- When assigning agents, Bugs must be processed before Features.
 
 ### 4. Grooming
 Ensure every ticket in `pending/` has:
