@@ -10,7 +10,7 @@
 - **Frontend:** Hotwire (Turbo + Stimulus), Tailwind CSS v4.
 - **Infrastructure:** The "Solid" Stack (Solid Queue, Solid Cache, Solid Cable).
 - **Deployment:** Docker + Kamal 2.
-- **Testing:** Minitest (Unit/Integration) + Capybara/Cuprite (System).
+- **Testing:** Minitest (Unit/Integration) + Capybara/Selenium (System).
 
 ---
 
