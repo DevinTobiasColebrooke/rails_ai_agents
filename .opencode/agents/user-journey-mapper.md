@@ -50,16 +50,20 @@ Refers to Feature: "{Gherkin Feature Name}"
 ## User Story
 > As a... I want to... So that...
 
-## Implementation Requirements
-1. {Specific technical step}
-2. {Specific technical step}
+## Functional Requirements (Capabilities)
+- [ ] User must be able to {action}
+- [ ] System must {behavior}
+- [ ] Must handle {edge case}
 
-## Acceptance Criteria
+## Acceptance Criteria (Definition of Done)
 - [ ] System Test passes: "{Scenario Name}"
 - [ ] UI matches Design System
 ```
 
 ## Ticket Granularity Rules
+- **Capabilities over Implementation**: Describe *what* the system must do, not *how* to code it.
+  - ❌ BAD: "Install Devise gem and generate User model."
+  - ✅ GOOD: "Implement secure user authentication with password reset capability."
 - **Atomic Work**: A ticket should usually be something an agent can finish in one "turn."
 - **Model First**: Create a ticket for the Model/Migration before the Controller/View.
 - **Turbo Needs**: If a story requires real-time updates, create a specific ticket for the Turbo Stream broadcasts.
