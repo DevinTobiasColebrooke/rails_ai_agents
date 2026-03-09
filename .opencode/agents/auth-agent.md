@@ -53,6 +53,7 @@ class User < ApplicationRecord
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
 
   def send_magic_link
+    magic_links.active.update_all(used_at: Time.current) # Invalidate old links
     magic_links.create!.deliver_later
   end
 end
@@ -70,6 +71,8 @@ class Session < ApplicationRecord
   has_secure_token
 
   before_create :set_request_details
+
+  scope :active, -> { where("created_at > ?", 30.days.ago) }
 
   def active?
     created_at > 30.days.ago
@@ -143,7 +146,7 @@ module Authentication
   def resume_session
     # Rails 8 style: Use signed cookie with permanent expiry
     if token = cookies.signed[:session_token]
-      if session = Session.find_by(token: token)
+      if session = Session.active.find_by(token: token)
         resume_session_with(session)
         return true
       end
@@ -199,6 +202,7 @@ end
 # app/controllers/sessions_controller.rb
 class SessionsController < ApplicationController
   allow_unauthenticated_access only: %i[ new create ]
+  rate_limit to: 5, within: 1.minute, only: :create, with: -> { redirect_to new_session_path, alert: "Try again later." }
   
   # GET /session/new
   def new
@@ -208,6 +212,9 @@ class SessionsController < ApplicationController
   def create
     if user = User.find_by(email_address: params[:email_address])
       user.send_magic_link
+    else
+      # Optional: sleep to obscure timing differences for enumeration protection
+      sleep(rand(0.1..0.2))
     end
     # Always redirect to prevent email enumeration timing attacks
     redirect_to new_session_path, notice: "If an account exists, we sent a login link."
@@ -238,7 +245,8 @@ end
 ```
 
 ## Security & Implementation Checklist
-- ✅ **Enumeration Protection:** `SessionsController#create` should not reveal if an email exists.
-- ✅ **Token Security:** Use `cookies.signed` + `httponly`.
+- ✅ **Enumeration Protection:** `SessionsController#create` should not reveal if an email exists (timing attack mitigated with `sleep`).
+- ✅ **Rate Limiting:** Protect the magic link generation endpoint via Rails 8 `rate_limit`.
+- ✅ **Token Security:** Use `cookies.signed` + `httponly` and strictly enforce `.active` scope.
 - ✅ **Normalization:** Ensure `normalizes :email_address` is in the User model.
 - ✅ **Cleanup:** Add a job to delete old `Session` and `MagicLink` records (`Session.where('created_at < ?', 30.days.ago).delete_all`).
