@@ -167,9 +167,11 @@ Scenario:
 2. Agent moves file to `docs/planning/tickets/completed`.
 3. Agent triggers `@qa-manager` for verification.
 
-### QA Protocol (Verification)
+### QA Protocol (Verification & Delivery)
 1. `@qa-manager` executes linked Test Cases.
-2. If Pass: Ticket remains in `completed`.
+2. If Pass: 
+   - Ticket remains in `completed`.
+   - `@qa-manager` triggers `@release-agent` to commit changes, push the branch, and open a PR.
 3. If Fail: 
    - `@qa-manager` moves ticket back to `active` OR creates new `T-BUG` ticket.
    - `@qa-manager` generates `docs/planning/tickets/pending/T-BUG-{id}.md`.

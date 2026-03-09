@@ -114,6 +114,8 @@ The agents are organized by their operational layer. Every agent file serves a s
 - **Role:** The Modernizer.
 - **Responsibility:** Audits existing code to fix anti-patterns (e.g., "Convert Service Object to Model Method").
 
+### Phase 5: Verification & Delivery
+
 #### 5a. The QA Manager
 *File: `agents/qa-manager.md`*
 - **Role:** QA Lead.
@@ -144,6 +146,11 @@ The agents are organized by their operational layer. Every agent file serves a s
 - **Role:** Security Auditor.
 - **Responsibility:** Checks for Mass Assignment, IDOR (Scoping), and dependency vulnerabilities.
 
+#### 5f. The Release Agent
+*File: `agents/release-agent.md`*
+- **Role:** Release Manager.
+- **Responsibility:** Triggered after QA verification. Manages git version control, semantic commits, and GitHub Pull Requests for the completed ticket.
+
 ### Phase 6: Operations & Documentation
 
 #### 6a. The SRE Agent
@@ -164,10 +171,11 @@ The agents are organized by their operational layer. Every agent file serves a s
 2.  **Plan:** Autopilot Agent generates the Backlog. Project Manager tracks it.
 3.  **Design:** Architects (System, Domain, Schema, Design, Librarian) create the Blueprints.
 4.  **Build:** Implement Agent reads Blueprints/Tickets and orchestrates Sub-Agents to write code.
-5.  **Verify:**
+5.  **Verify & Deliver:**
     *   Code Warden checks style.
     *   SecOps Sentinel checks security.
     *   User Proxy checks functionality (System Tests).
     *   Playwright Agent checks visuals (Browser).
+    *   Release Agent commits changes, pushes branch, and opens PR (only on successful verification).
 6.  **Refine:** Refactoring Agent optimizes technical debt.
 7.  **Ship:** SRE Agent configures deploy; Scribe Agent writes docs.
