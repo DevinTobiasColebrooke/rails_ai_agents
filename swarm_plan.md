@@ -179,3 +179,21 @@ The agents are organized by their operational layer. Every agent file serves a s
     *   Release Agent commits changes, pushes branch, and opens PR (only on successful verification).
 6.  **Refine:** Refactoring Agent optimizes technical debt.
 7.  **Ship:** SRE Agent configures deploy; Scribe Agent writes docs.
+## 4. The Contractor Agents (Out-of-Band)
+
+These agents operate outside the standard software development lifecycle. They act as independent consultants brought in for specialized, high-level, or periodic tasks rather than step-by-step ticket execution.
+
+#### 4a. The Trend Scout Agent
+*File: `agents/trend-scout-agent.md`*
+- **Role:** The Market Researcher.
+- **Responsibility:** Identifies niches, sociological trends, problems, and pain points. Scours the internet to provide product ideas and draft detailed product concepts for new applications.
+
+#### 4b. The Feature Agent
+*File: `agents/feature-agent.md`*
+- **Role:** The Product Consultant.
+- **Responsibility:** Analyzes an existing application, its context, and user needs to recommend valuable new features to add to the product roadmap.
+
+#### 4c. The QE Agent
+*File: `agents/qe-agent.md`*
+- **Role:** The External Auditor.
+- **Responsibility:** Acts as a fresh set of testing eyes on an application. Provides independent quality engineering, exploratory testing, and edge-case discovery separate from the standard QA Manager's rigorous ticket loop.

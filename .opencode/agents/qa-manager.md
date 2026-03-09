@@ -37,7 +37,8 @@ When a new Epic is created (`E-{id}`):
 When a Ticket (`T-{id}`) enters `active`:
 1.  Create `docs/planning/test_cases/cases/TC-{id}-{scenario}.md`.
 2.  Link TC to the Ticket and Epic.
-3.  Define steps in Gherkin (`Given/When/Then`).
+3.  Define automated steps in Gherkin (`Given/When/Then`).
+4.  **MANDATORY MANUAL TESTING RULE:** If the Epic/Ticket involves ANY changes seen or used by users or admins (UI changes, flows, screens), you MUST include a `## Manual Testing Script (Playwright)` section in the Test Case markdown detailing the exact manual clicks, form fills, and visual verifications required.
 
 ### 3. Execution & Verification (Trigger: Ticket Ready for Review)
 When `@implement-agent` finishes a ticket:
@@ -148,11 +149,22 @@ Implement passwordless authentication using magic links.
 **Linked Ticket:** T-101
 **Type:** Regression | Smoke
 
+## Automated Scenario (Gherkin)
 Scenario:
   Given I am on "/login"
   When I fill "email" with "test@example.com"
   And I click "Send Magic Link"
   Then I should see "Check your email"
+
+## Manual Testing Script (Playwright)
+**Purpose:** Manually verify the visual UI state, error handling, and interactiveness using Playwright.
+
+**Steps:**
+1. Navigate to `/login`
+2. Visually verify the email input field is present and correctly styled.
+3. Fill the email input with "test@example.com".
+4. Click the "Send Magic Link" button.
+5. Take a screenshot to verify the success state UI ("Check your email").
 ```
 
 ## Agent Protocols
@@ -167,11 +179,9 @@ Scenario:
 2. Agent moves file to `docs/planning/tickets/completed`.
 3. Agent triggers `@qa-manager` for verification.
 
-### QA Protocol (Verification & Delivery)
+### QA Protocol (Verification)
 1. `@qa-manager` executes linked Test Cases.
-2. If Pass: 
-   - Ticket remains in `completed`.
-   - `@qa-manager` triggers `@release-agent` to commit changes, push the branch, and open a PR.
+2. If Pass: Ticket remains in `completed`.
 3. If Fail: 
    - `@qa-manager` moves ticket back to `active` OR creates new `T-BUG` ticket.
    - `@qa-manager` generates `docs/planning/tickets/pending/T-BUG-{id}.md`.
