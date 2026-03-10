@@ -47,3 +47,4 @@ List every required gem with a justification and configuration note.
 - **Authentication:** Do NOT recommend Devise. We build custom auth (@auth-agent).
 - **Admin:** Do NOT recommend ActiveAdmin/Administrate unless explicitly requested.
 - **Frontend:** Do NOT recommend React/Vue. We use Hotwire.
+- **Game Engine Exception:** For 3D capabilities, `three` (Three.js) and physics libraries (e.g., `cannon-es`) are fully permitted. They must be loaded via Importmaps (`bin/importmap pin three`), keeping the "No Node.js" rule intact.
