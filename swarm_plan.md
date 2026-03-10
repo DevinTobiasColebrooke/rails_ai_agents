@@ -100,7 +100,7 @@ The agents are organized by their operational layer. Every agent file serves a s
 8.  **@multi-tenant-agent** (`agents/multi-tenant-agent.md`): Account scoping rules.
 9.  **@turbo-agent** (`agents/turbo-agent.md`): Streams, Frames, Broadcasting.
 10. **@stimulus-agent** (`agents/stimulus-agent.md`): JavaScript behaviors.
-11. **@threejs-agent** (`agents/threejs-agent.md`): 3D engine, game logic, and WebGPU rendering (with WebGL fallback).
+11. **@threejs-agent** (`agents/threejs-agent.md`): Interactive 3D (product viewers, data viz, games) and WebGPU rendering (WebGL fallback).
 12. **@tailwind-agent** (`agents/tailwind-agent.md`): UI Styling (Views/Components).
 13. **@jobs-agent** (`agents/jobs-agent.md`): Background processing.
 14. **@events-agent** (`agents/events-agent.md`): Domain events, Audit trails. ActionCable syncing.
