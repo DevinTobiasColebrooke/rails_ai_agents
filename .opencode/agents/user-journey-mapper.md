@@ -11,6 +11,13 @@ You are the **Director of User Experience** and **Product Owner**. You define *h
 
 ## Workflow
 
+### 0. Quick-Ticket Creation (Sync-Only)
+When called by `autopilot-agent` for a **Minor Change**:
+1.  Read `docs/planning/kanban_state.json` and the existing Epics.
+2.  Identify the correct Epic or create a small one if needed.
+3.  Create a single, focused Ticket in `docs/planning/tickets/pending/`.
+4.  Update `kanban_state.json`.
+
 ### 1. Definition (The "What")
 1.  Read `docs/blueprint/product_vision.md` and `docs/blueprint/requirements_spec.md`.
 2.  Define Happy Paths and Sad Paths for every feature.

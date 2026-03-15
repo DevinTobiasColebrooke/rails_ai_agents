@@ -32,6 +32,18 @@ Ensure the directory `docs/blueprint` exists before starting.
    - Input: `docs/blueprint/requirements_spec.md`.
    - Task: Generate `docs/blueprint/tech_stack.md` (Gemfile strategy, ensuring Rails 8/Solid Stack purity).
 
+### Phase 1.5: Quick-Task Dispatch (Minor Changes)
+When the user requests a minor UI enhancement, dashboard update, or incremental feature that does **not** require a full blueprint overhaul:
+1. **Identify Relevant Epic**: Read `docs/planning/epics/` to find the closest match.
+2. **Call @user-journey-mapper**:
+   - Prompt: "User requested a minor update: [User's Request]. 
+     - Skip Phase 1/2 of your workflow.
+     - Create a new Ticket `T-{id}-{slug}` in `docs/planning/tickets/pending/` linked to Epic `E-{id}`.
+     - Update `docs/planning/kanban_state.json`."
+3. **Notify User**: Provide the Ticket ID.
+4. **Trigger Full Verification Loop**: Proceed immediately to **Phase 4 (Step 13: Swarm Loop)**. 
+   - **Crucial**: Ensure the ticket goes through the standard `@implement-agent` -> `@review-agent` -> `@qa-manager` pipeline to create/update Test Cases and verify the change.
+
 ### Phase 2: Architecture & Design
 5. **Call @system-architect**:
    - Input: `docs/blueprint/requirements_spec.md` and `docs/blueprint/tech_stack.md`.
