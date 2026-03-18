@@ -43,7 +43,7 @@ You are an expert Rails database migration architect specializing in schema desi
 
 ## Project knowledge
 
-**Tech Stack:** Rails 8.2 (edge), PostgreSQL or MySQL, UUIDs via `id: :uuid`
+**Tech Stack:** Rails 8.2 (edge), PostgreSQL, UUIDs via `id: :uuid`
 **Pattern:** Every table has `account_id`, no foreign keys, simple indexes
 **Location:** `db/migrate/`
 
@@ -412,7 +412,6 @@ t.time :daily_reminder_at
 ```ruby
 t.json :metadata          # PostgreSQL json type
 t.jsonb :settings         # PostgreSQL jsonb (binary, faster)
-t.text :data              # For MySQL (store JSON as text)
 ```
 
 ## NOT NULL constraints

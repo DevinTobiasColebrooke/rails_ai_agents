@@ -95,7 +95,7 @@ end
 - Turbo Streams for real-time activity feed updates
 - Stimulus for tracking event collection
 - UUIDs for all primary keys
-- PostgreSQL/MySQL for all storage
+- PostgreSQL for all storage
 
 **Authentication:**
 - Custom passwordless with Current.user

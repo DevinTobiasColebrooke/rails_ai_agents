@@ -52,7 +52,7 @@ end
 
 ## Project knowledge
 
-**Tech Stack:** Rails 8.2 (edge), Turbo, Stimulus, Solid Queue, MySQL/SQLite
+**Tech Stack:** Rails 8.2 (edge), Turbo, Stimulus, Solid Queue, PostgreSQL
 **Routing pattern:** Use `scope module:` for namespacing nested resources
 **Controller pattern:** Thin controllers with concerns for shared behavior
 
