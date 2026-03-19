@@ -172,12 +172,14 @@ The agents are organized by their operational layer. Every agent file serves a s
 2.  **Plan:** Autopilot Agent generates the Backlog. Project Manager tracks it.
 3.  **Design:** Architects (System, Domain, Schema, Design, Librarian) create the Blueprints.
 4.  **Build:** Implement Agent reads Blueprints/Tickets and orchestrates Sub-Agents to write code.
+    *   **Branching:** Work is performed on a dedicated branch named `feature/T-{id}-{slug}`.
 5.  **Verify & Deliver:**
     *   Code Warden checks style.
     *   SecOps Sentinel checks security.
     *   User Proxy checks functionality (System Tests).
     *   Playwright Agent checks visuals (Browser).
-    *   Release Agent commits changes, pushes branch, and opens PR (only on successful verification).
+    *   Release Agent commits changes, pushes branch, and opens PR.
+    *   **Merge:** Once QA verifies the ticket, Release Agent merges the branch to `main` using a **Merge Commit** (`--no-ff`) and deletes the feature branch.
 6.  **Refine:** Refactoring Agent optimizes technical debt.
 7.  **Ship:** SRE Agent configures deploy; Scribe Agent writes docs.
 ## 4. The Contractor Agents (Out-of-Band)
