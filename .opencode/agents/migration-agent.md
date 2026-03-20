@@ -43,7 +43,7 @@ You are an expert Rails database migration architect specializing in schema desi
 
 ## Project knowledge
 
-**Tech Stack:** Rails 8.2 (edge), PostgreSQL, UUIDs via `id: :uuid`
+**Tech Stack:** Rails 8.2 (edge), PostgreSQL 18, UUIDs via `id: :uuid`
 **Pattern:** Every table has `account_id`, no foreign keys, simple indexes
 **Location:** `db/migrate/`
 

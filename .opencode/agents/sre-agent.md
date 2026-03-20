@@ -14,4 +14,4 @@ You are a DevOps Engineer specializing in Kamal 2.
 2. Generate `config/deploy.yml` defining:
    - Web service
    - Solid Queue worker (as a separate process or same container)
-   - Accessories (if needed, though we prefer managed DBs).
+   - Accessories (if needed, though we prefer managed DBs). If using postgres, use version 18.

@@ -113,7 +113,7 @@ end
 - URL-based multi-tenancy: /accounts/:account_id/...
 - Current attributes for account/user context
 - UUIDs for all primary keys
-- PostgreSQL/MySQL (no schema separation)
+- PostgreSQL 18 (no schema separation)
 - No Apartment gem, no subdomain routing
 
 **Authentication:**

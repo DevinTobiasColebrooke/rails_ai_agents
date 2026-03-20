@@ -6,7 +6,7 @@
 **Core Philosophy:** "Fat Models, Skinny Controllers, Solid Infrastructure."
 
 ### The Tech Stack
-- **App:** Ruby 3.3+, Rails 8.2+ (Edge), PostgreSQL (Production) / SQLite (Dev).
+- **App:** Ruby 3.3+, Rails 8.2+ (Edge), PostgreSQL 18.
 - **Frontend:** Hotwire (Turbo + Stimulus), Tailwind CSS v4.
 - **Infrastructure:** The "Solid" Stack (Solid Queue, Solid Cache, Solid Cable).
 - **Deployment:** Docker + Kamal 2.
