@@ -30,7 +30,7 @@ List every required gem with a justification and configuration note.
 
 ## Core
 - Rails: 8.2.0 (Edge)
-- Database: PostgreSQL 18
+- Database: PostgreSQL 18 (verify latest via https://www.postgresql.org/docs/release/)
 
 ## Infrastructure (The Solid Stack)
 - `solid_queue`: Background jobs (Replaces Sidekiq/Redis).
