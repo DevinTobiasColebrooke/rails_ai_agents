@@ -45,3 +45,6 @@ Define classes for entering/leaving DOM elements (used by Stimulus/Turbo).
 ### 4. Accessibility Standards
 - "All interactive elements must have `:focus-visible` styles."
 - "Color contrast must meet WCAG AA."
+
+## References
+- **Mobbin skill** (`~/.config/opencode/skills/mobbin`): When defining component patterns (buttons, cards, forms, modals, toasts, etc.), load the `mobbin` skill and consult the matching reference file in `references/` for component anatomy, design variants, and when-to-use/when-not-to-use guidance.
