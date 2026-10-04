@@ -1,0 +1,183 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# bin/kanban — scaffold and validate the shared planning board.
+#
+# Idempotent, dependency-free (Ruby stdlib only). Safe to run in any project.
+#
+# Usage:
+#   bin/kanban init      # create docs/planning layout + skeleton board + schema
+#   bin/kanban check     # validate the board (delegates to script/shard_kanban.rb
+#                        #   when present, else basic JSON/keys checks)
+#   bin/kanban schema    # write/print docs/planning/board.schema.json
+#   bin/kanban status    # print pending/active/completed counts
+#
+# Never clobbers an existing board. To push lane shard state up to the global
+# board use script/rollup_kanban.rb (when present).
+
+require "json"
+require "fileutils"
+
+ROOT     = File.expand_path("..", __dir__)
+PLANNING = File.join(ROOT, "docs", "planning")
+BOARD    = File.join(PLANNING, "kanban_state.json")
+SCHEMA   = File.join(PLANNING, "board.schema.json")
+SHARDER  = File.join(ROOT, "script", "shard_kanban.rb")
+
+SKELETON = {
+  "columns" => { "pending" => [], "active" => [], "completed" => [] },
+  "epics" => {},
+  "next_ticket_id" => "T-1",
+  "next_bug_id" => "T-BUG-1",
+  "tickets" => {}
+}.freeze
+
+BOARD_SCHEMA = {
+  "$schema" => "https://json-schema.org/draft/2020-12/schema",
+  "title" => "Swarm Kanban Board",
+  "type" => "object",
+  "required" => %w[columns tickets],
+  "properties" => {
+    "columns" => {
+      "type" => "object",
+      "required" => %w[pending active completed],
+      "additionalProperties" => false,
+      "properties" => {
+        "pending" => { "type" => "array", "items" => { "type" => "string" } },
+        "active" => { "type" => "array", "items" => { "type" => "string" } },
+        "completed" => { "type" => "array", "items" => { "type" => "string" } }
+      }
+    },
+    "epics" => { "type" => "object" },
+    "next_ticket_id" => { "type" => "string", "pattern" => "^T-\\d+$" },
+    "next_bug_id" => { "type" => "string", "pattern" => "^T-BUG-\\d+$" },
+    "tickets" => {
+      "type" => "object",
+      "additionalProperties" => {
+        "type" => "object",
+        "required" => %w[id],
+        "properties" => {
+          "id" => { "type" => "string" },
+          "title" => { "type" => "string" },
+          "type" => { "type" => "string" },
+          "priority" => { "type" => "string" },
+          "status" => { "type" => "string" },
+          "epic_id" => { "type" => "string" },
+          "ticket_file" => { "type" => "string" },
+          "depends_on" => { "type" => "array", "items" => { "type" => "string" } }
+        }
+      }
+    }
+  },
+  "additionalProperties" => true
+}.freeze
+
+DIRS = [
+  %w[docs planning epics],
+  %w[docs planning tickets pending],
+  %w[docs planning tickets active],
+  %w[docs planning tickets completed],
+  %w[docs planning test_cases plans],
+  %w[docs planning test_cases cases],
+  %w[docs planning test_cases runs]
+].freeze
+
+def write_unless_exists(path, content)
+  return false if File.exist?(path)
+
+  FileUtils.mkdir_p(File.dirname(path))
+  File.write(path, content)
+  true
+end
+
+def init
+  created = []
+  DIRS.each do |parts|
+    dir = File.join(ROOT, *parts)
+    FileUtils.mkdir_p(dir)
+    # Keep truly-empty dirs in git; skip dirs that already have content.
+    next unless Dir.children(dir).empty?
+
+    keep = File.join(dir, ".keep")
+    created << keep if write_unless_exists(keep, "")
+  end
+
+  if write_unless_exists(BOARD, JSON.pretty_generate(SKELETON) + "\n")
+    created << BOARD
+  end
+  if write_unless_exists(SCHEMA, JSON.pretty_generate(BOARD_SCHEMA) + "\n")
+    created << SCHEMA
+  end
+
+  # Seed lane shards only when this project actually has a lane registry.
+  if File.exist?(SHARDER) && File.exist?(File.join(PLANNING, "lanes.json"))
+    system("ruby", SHARDER, "--write", "--charters")
+  end
+
+  if created.empty?
+    puts "docs/planning already initialised (nothing to do)."
+  else
+    puts "Initialised #{created.size} file(s):"
+    created.each { |f| puts "  #{f.sub("#{ROOT}/", "")}" }
+  end
+end
+
+def board
+  JSON.parse(File.read(BOARD))
+end
+
+def check
+  unless File.exist?(BOARD)
+    warn "No board at docs/planning/kanban_state.json — run: bin/kanban init"
+    exit 1
+  end
+  if File.exist?(SHARDER) && File.exist?(File.join(PLANNING, "lanes.json"))
+    exec("ruby", SHARDER, "--check")
+  else
+    data = board
+    %w[columns tickets].each do |key|
+      unless data.key?(key)
+        warn "Board missing required key: #{key}"
+        exit 1
+      end
+    end
+    %w[pending active completed].each do |col|
+      unless data["columns"].is_a?(Hash) && data["columns"][col].is_a?(Array)
+        warn "Board columns.#{col} must be an array"
+        exit 1
+      end
+    end
+    puts "Board OK (basic validation — no lane registry to delegate to)."
+  end
+end
+
+def schema
+  if write_unless_exists(SCHEMA, JSON.pretty_generate(BOARD_SCHEMA) + "\n")
+    puts "Wrote docs/planning/board.schema.json"
+  else
+    puts SCHEMA.sub("#{ROOT}/", "")
+  end
+end
+
+def status
+  data = board
+  c = data["columns"] || {}
+  puts "Board: docs/planning/kanban_state.json"
+  puts "  pending:   #{Array(c["pending"]).size}"
+  puts "  active:    #{Array(c["active"]).size}"
+  puts "  completed: #{Array(c["completed"]).size}"
+  puts "  tickets:   #{(data["tickets"] || {}).size}"
+  if File.exist?(File.join(PLANNING, "lanes.json"))
+    lanes = JSON.parse(File.read(File.join(PLANNING, "lanes.json")))
+    puts "  lanes:     #{Array(lanes["lanes"]).size}"
+  end
+end
+
+case ARGV.first
+when "init", nil then init
+when "check" then check
+when "schema" then schema
+when "status" then status
+else
+  abort "Unknown command '#{ARGV.first}'. See bin/kanban (init|check|schema|status)."
+end
