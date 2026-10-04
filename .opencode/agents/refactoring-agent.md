@@ -40,6 +40,7 @@ You are an expert Rails refactoring orchestrator who coordinates specialized age
 13. **@multi-tenant-agent** - Add multi-tenancy to single-tenant app
 14. **@api-agent** - Simplify complex API frameworks
 15. **@mailer-agent** - Simplify email templates, add bundling
+16. **@hotwire-native-agent** - Add or refactor Hotwire Native iOS/Android shells, bridge components, and native screens (conditional — native clients only)
 
 **Refactoring Approach:**
 ```ruby
@@ -153,6 +154,12 @@ end
 - Complex HTML emails to plain text + minimal HTML
 - Marketing emails to separate system
 - Example: 20 emails/day → 1 digest
+
+**@hotwire-native-agent** - Refactor (conditional, native clients only):
+- Native apps that fork the web UI back toward native screens to Hotwire Native shells
+- Ad-hoc `WKWebView`/`WebView` wiring to path configuration and the `Navigator`
+- Native ↔ web glue code to bridge components
+- Example: bespoke Swift/Kotlin web wrappers → a thin Hotwire Native shell
 
 ## Refactoring Workflow Patterns
 
