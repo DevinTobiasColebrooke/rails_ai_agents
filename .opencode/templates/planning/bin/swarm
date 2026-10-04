@@ -161,15 +161,27 @@ def run(n, cmd)
 end
 
 def finish(n, force)
-  s = with_registry { |reg| reg["swarms"].delete(n.to_s) }
-  abort "Unknown swarm ##{n}." unless s
+  s = read_registry["swarms"][n.to_s] or abort "Unknown swarm ##{n}. See: bin/swarm list"
+
+  branch_exists = system("git", "-C", ROOT, "rev-parse", "--verify", "--quiet", s["branch"],
+                         out: File::NULL, err: File::NULL)
+  if branch_exists && !force
+    merged = system("git", "-C", ROOT, "merge-base", "--is-ancestor", s["branch"], "main",
+                    out: File::NULL, err: File::NULL)
+    unless merged
+      abort "Swarm ##{n}'s branch #{s["branch"]} is not merged into main. " \
+            "Merge the PR first, or pass --force to discard the work."
+    end
+  end
+
+  with_registry { |reg| reg["swarms"].delete(n.to_s) }
 
   if File.directory?(s["worktree"])
-    args = ["git", "-C", ROOT, "worktree", "remove", s["worktree"]]
-    args << "--force" if force
-    system(*args) || warn("worktree remove failed")
+    # Worktree may hold uncommitted (reconciled) planning, so force the removal.
+    system("git", "-C", ROOT, "worktree", "remove", "--force", s["worktree"]) ||
+      warn("worktree remove failed")
   end
-  system("git", "-C", ROOT, "branch", "-D", s["branch"])
+  system("git", "-C", ROOT, "branch", "-D", s["branch"], out: File::NULL, err: File::NULL)
   %w[dev test].each { |e| system("dropdb", "-p", PG_PORT, "#{s["database"]}_#{e}", err: File::NULL) }
   puts "Finished swarm ##{n}."
 end

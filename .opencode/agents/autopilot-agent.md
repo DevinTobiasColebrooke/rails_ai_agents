@@ -47,45 +47,25 @@ Use this when the user asks for a feature, fix, or change in a repo that already
 application. **The user will run many of these sessions at once — one `opencode` window
 per task — and types no CLI.** You (the autopilot) own all isolation.
 
-1. **If a swarm is already active** (`.lane` exists, or `$LANE`/`$SWARM` is set), you are
-   already inside that swarm's workspace. Create nothing new; proceed lane-scoped.
+**Load the `swarm` skill (`skill(id="swarm")`) and follow it.** In short:
 
-2. **Otherwise provision a workspace for this session.** You start in the main checkout,
-   which is the **integration lane** — never build there. Do this silently:
-   1. **Classify** the request to a **lane** (a label) by matching it against `name`,
-      `owns`, and `epics` in `docs/planning/lanes.json`. If two fit, pick the primary; if
-      none fit, use `default`. A feature spanning lanes gets a primary lane plus
-      cross-linked *satellite* tickets.
-   2. Run `bin/swarm start --lane <lane> --prepare`. It allocates a unique worktree +
-      branch + Postgres database + port, prepares the DB, and prints a
-      `SWARM_JSON: {…}` line (worktree, branch, ticket_block, bug_block, …).
-   3. **Relocate this session into that worktree** (session move) so all later work —
-      yours and every subagent's — happens there. The worktree carries a `.lane`
-      marker, so your planning root becomes `docs/planning/lanes/<lane>/`.
-   - One swarm per window. Never run two swarms in the same worktree.
-   - If `bin/swarm` is missing, fall back to `bin/lane create <lane>` + session move.
+1. If a swarm is already active (`.lane` exists, or `$LANE`/`$SWARM` is set), you are
+   inside it — proceed lane-scoped and create nothing.
+2. Otherwise classify a lane from `docs/planning/lanes.json`, run
+   `bin/swarm start --lane <lane> --prepare`, and **relocate this session into the
+   worktree** given in `SWARM_JSON.worktree`, so you and every subagent work there. The
+   main checkout is the integration lane — never build there.
+3. File the ticket in `docs/planning/lanes/<lane>/` using this swarm's reserved ID block
+   (`ticket_block` / `bug_block`), then run the verification loop (Phase 4 / step 13),
+   passing the lane root in every subagent dispatch.
+4. Commit **code only** and open a PR — never commit `docs/planning/**`.
+5. **After the PR merges, clean up:** relocate the session back to the main checkout, then
+   run `bin/swarm finish <n>` (removes the worktree, branch, and databases). A swarm
+   cannot remove its own worktree while inside it — relocate first.
 
-3. **File the ticket in the lane shard** via `@user-journey-mapper`, planning root
-   `docs/planning/lanes/<lane>/`:
-   > Create a ticket in `docs/planning/lanes/<lane>/tickets/pending/`, link the epic, and
-   > update `docs/planning/lanes/<lane>/kanban_state.json`. Do **not** touch the global
-   > `docs/planning/kanban_state.json`.
-   Allocate the ID from this swarm's reserved block (`ticket_block` for features/chores,
-   `bug_block` for bugs) reported by `bin/swarm start`; never allocate outside it.
-
-4. **Run the verification loop** (Phase 4 / step 13) scoped to the lane root, passing
-   `docs/planning/lanes/<lane>/` in **every** subagent dispatch. Bugs before features.
-
-5. **Land + reconcile.** Commit **code only** and open a PR from the swarm branch. Do
-   **not** commit `docs/planning/**` — parallel swarm branches would collide on the board.
-   After the PR merges, `@project-manager` reads this swarm's worktree planning and folds
-   it into `main` (`ruby script/rollup_kanban.rb --write`); it is the only writer of the
-   global board. The swarm writes only its own lane shard, inside its own worktree.
-
-**Parallel rules:** the isolation unit is the **swarm** (worktree + branch + DB + ports),
-not the lane — many swarms may share a lane label. Never two swarms in one worktree; the
-main checkout stays the integration lane. `bin/swarm list` shows active swarms;
-`bin/swarm finish <n>` tears one down.
+Isolation unit is the **swarm** (worktree + DB + ports), not the lane; many swarms may
+share a lane label. `bin/swarm list` shows active swarms; `bin/swarm finish <n>` tears one
+down.
 
 ### Phase 1: Strategy & Definition
 1. **Call 'Product-Strategist'**:
