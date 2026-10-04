@@ -32,10 +32,59 @@ When dispatching subagents, pass the resolved planning root explicitly (subagent
 
 ## Instructions
 
-When the user provides an application idea, you must execute the following **Chain of Command** automatically. Do not stop between steps unless a critical ambiguity exists.
+Choose the entry point:
 
-**Preparation:**
-Ensure the directory `docs/blueprint` exists before starting.
+- **Feature / fix / change in an existing project** (the repo already contains an application, e.g. `app/` exists) → start at **Phase 0: Intake**.
+- **New application idea** → start at Phase 1.
+
+Do not stop between steps unless a critical ambiguity exists.
+
+**Preparation (Phase 1 only):** ensure the directory `docs/blueprint` exists before starting.
+
+### Phase 0: Intake — feature / fix in an existing project (parallel-safe)
+
+Use this when the user asks for a feature, fix, or change in a repo that already has an
+application. **The user may be running several of these sessions in parallel, one per
+terminal window.** Each session must be isolated to exactly one lane, or swarms collide
+on the working tree, database, and ports. Never run two swarms in the same directory.
+
+1. **Resolve this session's lane.**
+   - If a lane is already active (`.lane` exists or `$LANE` is set), this session **is**
+     that lane's swarm. Use it. Never switch lanes mid-session.
+   - If not (you are in the main checkout), read `docs/planning/lanes.json` and match the
+     request to the best lane by `name`, `owns`, and `epics`. Then isolate this session:
+     - Free lane → `bin/lane create <lane>` then move this session into the worktree it
+       created, so all later work happens there.
+     - Lane busy (its worktree already exists) → **another swarm owns it. Stop and ask
+       the user** (queue, pick another lane, or run serially). Do not share a lane.
+     - Request spans lanes → pick the primary lane and file cross-linked *satellite*
+       tickets in the others; never edit another lane's files directly.
+   - The **preferred way to open a parallel swarm** is the launcher, which does all of
+     the above: `bin/lane open <lane>` in a fresh terminal (or `bin/lane open` to take
+     the next free lane).
+
+2. **Ensure the board exists** in this worktree. If `docs/planning/kanban_state.json` is
+   missing, run `bin/kanban init` (`$HOME/.config/opencode/bin/planning-init "$PWD"`).
+
+3. **File the ticket in the lane shard** using an ID from this lane's reserved block in
+   `lanes.json` (`ticket_block` for features/chores, `bug_block` for bugs). Delegate to
+   `@user-journey-mapper`:
+   > Planning root: `docs/planning/lanes/<lane>/`. Create `T-<id>-<slug>` in
+   > `docs/planning/lanes/<lane>/tickets/pending/`, link the epic, and update
+   > `docs/planning/lanes/<lane>/kanban_state.json`. Do **not** touch the global
+   > `docs/planning/kanban_state.json`.
+   Read the lane's `next_ticket_id`, allocate within its block, and advance it.
+
+4. **Run the verification loop** (Phase 4 / step 13) scoped to the lane root, passing
+   `docs/planning/lanes/<lane>/` in **every** subagent dispatch. Bugs before features.
+
+5. **Land + roll up.** Commit and open a PR from the lane branch (`lane/<lane>`). After
+   it merges, `@project-manager` runs `ruby script/rollup_kanban.rb --write` on `main` to
+   fold the lane shard into the global board. A swarm only ever writes its own lane shard.
+
+**Parallel rules:** one lane per concurrent swarm; one worktree per lane; never two
+swarms in one directory. The main checkout is the integration lane — no swarm builds
+there. Keep lane branches short-lived and `bin/lane sync <lane>` as `main` moves.
 
 ### Phase 1: Strategy & Definition
 1. **Call 'Product-Strategist'**:
@@ -52,16 +101,13 @@ Ensure the directory `docs/blueprint` exists before starting.
    - Task: Generate `docs/blueprint/tech_stack.md` (Gemfile strategy, ensuring Rails 8/Solid Stack purity).
 
 ### Phase 1.5: Quick-Task Dispatch (Minor Changes)
-When the user requests a minor UI enhancement, dashboard update, or incremental feature that does **not** require a full blueprint overhaul:
-1. **Identify Relevant Epic**: Read `docs/planning/epics/` to find the closest match.
-2. **Call @user-journey-mapper**:
-   - Prompt: "User requested a minor update: [User's Request]. 
-     - Skip Phase 1/2 of your workflow.
-     - Create a new Ticket `T-{id}-{slug}` in `docs/planning/tickets/pending/` linked to Epic `E-{id}`.
-     - Update `docs/planning/kanban_state.json`."
-3. **Notify User**: Provide the Ticket ID.
-4. **Trigger Full Verification Loop**: Proceed immediately to **Phase 4 (Step 13: Swarm Loop)**. 
-   - **Crucial**: Ensure the ticket goes through the standard `@implement-agent` -> `@review-agent` -> `@qa-manager` pipeline to create/update Test Cases and verify the change.
+For a minor UI, dashboard, or incremental change in an **existing** project, use
+**Phase 0** — it files the ticket in the correct lane shard with a reserved ID and runs
+the same implement → review → QA loop. Do **not** write to the global
+`docs/planning/tickets/` or global `kanban_state.json`.
+
+(Phase 1.5 applies only when a lane is unavailable and the user explicitly accepts
+single-stream operation in the main checkout.)
 
 ### Phase 2: Architecture & Design
 5. **Call @system-architect**:
@@ -132,3 +178,5 @@ Instead of processing a static list, you manage the `docs/planning` database.
 ## Constraints
 - **Strict Order:** You cannot build (Phase 4) without a Blueprint (Phase 2).
 - **Scope Control:** If a feature isn't in `docs/blueprint/requirements_spec.md`, do not build it.
+- **Lane isolation (parallel swarms):** one swarm per lane; never run two swarms in the same directory; a swarm writes only its own lane shard under `docs/planning/lanes/<lane>/`; the global `docs/planning/kanban_state.json` is a read-only rollup owned by `@project-manager`.
+- **No CLI for the user:** you run `bin/lane`, `bin/kanban`, and the scripts yourself. The user only describes the work.
