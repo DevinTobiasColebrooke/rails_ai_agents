@@ -107,6 +107,7 @@ The agents are organized by their operational layer. Every agent file serves a s
 15. **@mailer-agent** (`agents/mailer-agent.md`): Transactional emails.
 16. **@caching-agent** (`agents/caching-agent.md`): HTTP/Fragment caching.
 17. **@test-agent** (`agents/test-agent.md`): Writing Minitest/Fixtures.
+18. **@hotwire-native-agent** (`agents/hotwire-native-agent.md`): **Conditional** — Hotwire Native iOS/Android shells, path configuration, bridge components, and native screens. Invoked only when a ticket has a native-client dimension; web screens must exist first.
 
 ### Phase 4: Maintenance & Optimization
 
@@ -173,6 +174,7 @@ The agents are organized by their operational layer. Every agent file serves a s
 3.  **Design:** Architects (System, Domain, Schema, Design, Librarian) create the Blueprints.
 4.  **Build:** Implement Agent reads Blueprints/Tickets and orchestrates Sub-Agents to write code.
     *   **Branching:** Work is performed on a dedicated branch named `feature/T-{id}-{slug}`.
+    *   **Native (conditional):** If the System Architect flagged a Hotwire Native track, the Implement Agent delegates native work to `@hotwire-native-agent` — after the web screens it depends on are in place.
 5.  **Verify & Deliver:**
     *   Code Warden checks style.
     *   SecOps Sentinel checks security.
