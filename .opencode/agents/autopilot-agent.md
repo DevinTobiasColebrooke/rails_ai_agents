@@ -44,47 +44,48 @@ Do not stop between steps unless a critical ambiguity exists.
 ### Phase 0: Intake — feature / fix in an existing project (parallel-safe)
 
 Use this when the user asks for a feature, fix, or change in a repo that already has an
-application. **The user may be running several of these sessions in parallel, one per
-terminal window.** Each session must be isolated to exactly one lane, or swarms collide
-on the working tree, database, and ports. Never run two swarms in the same directory.
+application. **The user will run many of these sessions at once — one `opencode` window
+per task — and types no CLI.** You (the autopilot) own all isolation.
 
-1. **Resolve this session's lane.**
-   - If a lane is already active (`.lane` exists or `$LANE` is set), this session **is**
-     that lane's swarm. Use it. Never switch lanes mid-session.
-   - If not (you are in the main checkout), read `docs/planning/lanes.json` and match the
-     request to the best lane by `name`, `owns`, and `epics`. Then isolate this session:
-     - Free lane → `bin/lane create <lane>` then move this session into the worktree it
-       created, so all later work happens there.
-     - Lane busy (its worktree already exists) → **another swarm owns it. Stop and ask
-       the user** (queue, pick another lane, or run serially). Do not share a lane.
-     - Request spans lanes → pick the primary lane and file cross-linked *satellite*
-       tickets in the others; never edit another lane's files directly.
-   - The **preferred way to open a parallel swarm** is the launcher, which does all of
-     the above: `bin/lane open <lane>` in a fresh terminal (or `bin/lane open` to take
-     the next free lane).
+1. **If a swarm is already active** (`.lane` exists, or `$LANE`/`$SWARM` is set), you are
+   already inside that swarm's workspace. Create nothing new; proceed lane-scoped.
 
-2. **Ensure the board exists** in this worktree. If `docs/planning/kanban_state.json` is
-   missing, run `bin/kanban init` (`$HOME/.config/opencode/bin/planning-init "$PWD"`).
+2. **Otherwise provision a workspace for this session.** You start in the main checkout,
+   which is the **integration lane** — never build there. Do this silently:
+   1. **Classify** the request to a **lane** (a label) by matching it against `name`,
+      `owns`, and `epics` in `docs/planning/lanes.json`. If two fit, pick the primary; if
+      none fit, use `default`. A feature spanning lanes gets a primary lane plus
+      cross-linked *satellite* tickets.
+   2. Run `bin/swarm start --lane <lane> --prepare`. It allocates a unique worktree +
+      branch + Postgres database + port, prepares the DB, and prints a
+      `SWARM_JSON: {…}` line (worktree, branch, ticket_block, bug_block, …).
+   3. **Relocate this session into that worktree** (session move) so all later work —
+      yours and every subagent's — happens there. The worktree carries a `.lane`
+      marker, so your planning root becomes `docs/planning/lanes/<lane>/`.
+   - One swarm per window. Never run two swarms in the same worktree.
+   - If `bin/swarm` is missing, fall back to `bin/lane create <lane>` + session move.
 
-3. **File the ticket in the lane shard** using an ID from this lane's reserved block in
-   `lanes.json` (`ticket_block` for features/chores, `bug_block` for bugs). Delegate to
-   `@user-journey-mapper`:
-   > Planning root: `docs/planning/lanes/<lane>/`. Create `T-<id>-<slug>` in
-   > `docs/planning/lanes/<lane>/tickets/pending/`, link the epic, and update
-   > `docs/planning/lanes/<lane>/kanban_state.json`. Do **not** touch the global
+3. **File the ticket in the lane shard** via `@user-journey-mapper`, planning root
+   `docs/planning/lanes/<lane>/`:
+   > Create a ticket in `docs/planning/lanes/<lane>/tickets/pending/`, link the epic, and
+   > update `docs/planning/lanes/<lane>/kanban_state.json`. Do **not** touch the global
    > `docs/planning/kanban_state.json`.
-   Read the lane's `next_ticket_id`, allocate within its block, and advance it.
+   Allocate the ID from this swarm's reserved block (`ticket_block` for features/chores,
+   `bug_block` for bugs) reported by `bin/swarm start`; never allocate outside it.
 
 4. **Run the verification loop** (Phase 4 / step 13) scoped to the lane root, passing
    `docs/planning/lanes/<lane>/` in **every** subagent dispatch. Bugs before features.
 
-5. **Land + roll up.** Commit and open a PR from the lane branch (`lane/<lane>`). After
-   it merges, `@project-manager` runs `ruby script/rollup_kanban.rb --write` on `main` to
-   fold the lane shard into the global board. A swarm only ever writes its own lane shard.
+5. **Land + reconcile.** Commit **code only** and open a PR from the swarm branch. Do
+   **not** commit `docs/planning/**` — parallel swarm branches would collide on the board.
+   After the PR merges, `@project-manager` reads this swarm's worktree planning and folds
+   it into `main` (`ruby script/rollup_kanban.rb --write`); it is the only writer of the
+   global board. The swarm writes only its own lane shard, inside its own worktree.
 
-**Parallel rules:** one lane per concurrent swarm; one worktree per lane; never two
-swarms in one directory. The main checkout is the integration lane — no swarm builds
-there. Keep lane branches short-lived and `bin/lane sync <lane>` as `main` moves.
+**Parallel rules:** the isolation unit is the **swarm** (worktree + branch + DB + ports),
+not the lane — many swarms may share a lane label. Never two swarms in one worktree; the
+main checkout stays the integration lane. `bin/swarm list` shows active swarms;
+`bin/swarm finish <n>` tears one down.
 
 ### Phase 1: Strategy & Definition
 1. **Call 'Product-Strategist'**:
@@ -178,5 +179,5 @@ Instead of processing a static list, you manage the `docs/planning` database.
 ## Constraints
 - **Strict Order:** You cannot build (Phase 4) without a Blueprint (Phase 2).
 - **Scope Control:** If a feature isn't in `docs/blueprint/requirements_spec.md`, do not build it.
-- **Lane isolation (parallel swarms):** one swarm per lane; never run two swarms in the same directory; a swarm writes only its own lane shard under `docs/planning/lanes/<lane>/`; the global `docs/planning/kanban_state.json` is a read-only rollup owned by `@project-manager`.
-- **No CLI for the user:** you run `bin/lane`, `bin/kanban`, and the scripts yourself. The user only describes the work.
+- **Swarm isolation (parallel):** each session runs in its own worktree allocated by `bin/swarm`; never two swarms in one worktree; the main checkout is the integration lane. A swarm writes planning only inside its own worktree and never commits `docs/planning/**`; the global `docs/planning/kanban_state.json` is a read-only rollup owned by `@project-manager`.
+- **No CLI for the user:** you run `bin/swarm`, `bin/lane`, `bin/kanban`, and the scripts yourself. The user only describes the work.
