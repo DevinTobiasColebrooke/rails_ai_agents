@@ -177,6 +177,37 @@ def info(lane)
 end
 
 command = ARGV.shift
+def open_lane(argv, base)
+  id = argv.first
+  if id.nil? || id.start_with?("-")
+    free = LANES.values.find do |l|
+      l["status"] == "ready" && l["worktree"] && !File.directory?(abs_worktree(l))
+    end
+    abort "All lanes are in use. Free one with: bin/lane remove <lane> (or add a lane to lanes.json)." unless free
+
+    id = free["id"]
+  else
+    argv.shift
+  end
+  argv.shift if argv.first == "--"
+
+  lane = lane!(id)
+  wt = abs_worktree(lane)
+  if File.directory?(wt)
+    abort "Lane '#{id}' is already active (#{wt}). Another swarm owns it — " \
+          "pick another lane (bin/lane list) or remove it when idle (bin/lane remove #{id})."
+  end
+
+  puts "Opening swarm for lane '#{id}' in #{wt} ..."
+  create(lane, base)
+
+  cmd = argv.empty? ? [ENV.fetch("OPENCODE_CMD", "opencode")] : argv
+  exec({ "LANE" => id,
+         "DATABASE_URL" => "postgres://localhost:5434/#{lane.dig("database", "dev")}",
+         "PORT" => lane.dig("ports", "server").to_s },
+       *cmd, chdir: wt)
+end
+
 case command
 when "list", nil
   list
@@ -186,6 +217,10 @@ when "create"
   opts = {}
   OptionParser.new { |o| o.on("--base REF") { |v| opts[:base] = v } }.parse!(ARGV)
   create(lane!(ARGV.shift), opts[:base] || "main")
+when "open"
+  opts = {}
+  OptionParser.new { |o| o.on("--base REF") { |v| opts[:base] = v } }.parse!(ARGV)
+  open_lane(ARGV, opts[:base] || "main")
 when "env"
   env(lane!(ARGV.shift))
 when "sync"
@@ -206,5 +241,5 @@ when "run"
   exec({ "DATABASE_URL" => "postgres://localhost:5434/#{l.dig("database", "dev")}",
          "PORT" => l.dig("ports", "server").to_s }, *ARGV, chdir: wt)
 else
-  abort "Unknown command '#{command}'. See bin/lane (list|info|create|env|run|sync|remove)."
+  abort "Unknown command '#{command}'. See bin/lane (list|info|create|open|env|run|sync|remove)."
 end
