@@ -1,4 +1,3 @@
-import { Plugin } from "@opencode/plugin"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
@@ -7,6 +6,34 @@ import { join } from "node:path"
 // opening an unrelated repo is a no-op.
 //
 // Registers a `kanban_init` tool and a prompt-admission hook.
+//
+// NOTE: This is a standalone config plugin with no `node_modules`, so it must
+// not import `@opencode/plugin` — the package isn't resolvable from here and
+// the server does not provide it. `Plugin.define` from that package is the
+// identity function at runtime, so we use a local equivalent and export the
+// same `{ id, setup }` definition the V2 loader expects.
+
+interface ToolEditor {
+  add(tool: {
+    name: string
+    description: string
+    input: Record<string, unknown>
+    execute: () => Promise<{ content: string }>
+  }): void
+}
+
+interface PluginContext {
+  readonly location: { readonly directory: string }
+  readonly tool: { transform(callback: (editor: ToolEditor) => void): Promise<unknown> }
+  readonly session: { hook(name: string, callback: () => void): Promise<unknown> }
+}
+
+interface PluginDefinition {
+  readonly id: string
+  readonly setup: (context: PluginContext) => void | Promise<void>
+}
+
+const define = (plugin: PluginDefinition): PluginDefinition => plugin
 
 const DIRS: readonly (readonly string[])[] = [
   ["docs", "planning", "epics"],
@@ -31,7 +58,7 @@ const SKELETON =
     2,
   ) + "\n"
 
-export default Plugin.define({
+export default define({
   id: "swarm-board",
   async setup(ctx) {
     const root = ctx.location.directory
