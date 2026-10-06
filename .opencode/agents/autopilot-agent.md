@@ -63,6 +63,10 @@ per task — and types no CLI.** You (the autopilot) own all isolation.
    run `bin/swarm finish <n>` (removes the worktree, branch, and databases). A swarm
    cannot remove its own worktree while inside it — relocate first.
 
+To rebase a swarm mid-flight, run `bin/swarm sync <n>` — it moves the uncommitted
+`docs/planning/**` edits aside, rebases, and restores them. **Never `git stash`**:
+`refs/stash` is shared by every worktree and can leak another swarm's work.
+
 Isolation unit is the **swarm** (worktree + DB + ports), not the lane; many swarms may
 share a lane label. `bin/swarm list` shows active swarms; `bin/swarm finish <n>` tears one
 down.

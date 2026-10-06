@@ -57,6 +57,23 @@ and `docs/blueprint/**` are read-only inputs.
 - Run the verification loop: `@implement-agent` → `@review-agent` → `@qa-manager`
   (Phase 4 of the autopilot workflow). Bugs before features.
 
+## Worktree hygiene — never `git stash`
+
+`refs/stash` is **shared by every worktree** in the repo. `git stash` in one swarm is
+visible in all the others, and `git stash pop` can consume another swarm's entry or apply
+its changes into your tree. A swarm's uncommitted `docs/planning/**` edits are the usual
+reason a rebase refuses to run — **do not stash them.**
+
+Rebase safely instead; it backs up the dirty planning paths, resets the tree, rebases, and
+puts them back (no stash):
+
+```sh
+bin/swarm sync <n> [--base main]      # swarm worktree
+bin/lane  sync <lane> [--base main]   # lane worktree
+```
+
+If a `refs/stash` entry already exists, leave it alone — it may belong to another swarm.
+
 ## Land
 
 - Commit **code only**: `git add` explicit paths, never `docs/planning/**`.
@@ -81,12 +98,14 @@ bin/swarm start [--lane NAME] [--prepare]   # provision; prints SWARM_JSON + ID 
 bin/swarm list                              # active swarms
 bin/swarm env <n>                           # shell exports for swarm N
 bin/swarm run <n> -- <cmd...>               # run a command in swarm N's worktree
+bin/swarm sync <n> [--base REF]             # rebase; moves planning aside (never stash)
 bin/swarm finish <n> [--force]              # teardown (merged-branch guard unless --force)
 ```
 
 ## Rules
 
 - One swarm per `opencode` window; never two swarms in one worktree.
+- Never `git stash` in a worktree — the stash stack is shared; use `bin/swarm sync`.
 - A swarm writes only its own lane shard, inside its own worktree.
 - Never commit planning from a swarm branch; the global board is a read-only rollup owned
   by `@project-manager`.
