@@ -21,6 +21,8 @@ require "fileutils"
 require "optparse"
 require "shellwords"
 
+require_relative "../script/planning_guard"
+
 ROOT       = File.expand_path("..", __dir__)
 LANES_JSON = File.join(ROOT, "docs", "planning", "lanes.json")
 
@@ -135,9 +137,12 @@ def sync(lane, base)
   wt = abs_worktree(lane)
   abort "Worktree missing: #{wt}" unless File.directory?(wt)
   sh("git", "-C", wt, "fetch", "origin") unless ENV["LANE_NO_FETCH"] == "1"
-  ok = sh("git", "-C", wt, "fetch", "origin", base) && sh("git", "-C", wt, "rebase", "origin/#{base}")
+  ok = false
+  PlanningGuard.with_aside(wt) do
+    ok = sh("git", "-C", wt, "fetch", "origin", base) && sh("git", "-C", wt, "rebase", "origin/#{base}")
+  end
   abort "rebase failed — resolve conflicts, then `git -C #{wt} rebase --continue`" unless ok
-  puts "Lane '#{lane["id"]}' rebased on origin/#{base}."
+  puts "Lane '#{lane["id"]}' rebased on origin/#{base} (planning changes preserved; no stash used)."
 end
 
 def remove(lane, force)

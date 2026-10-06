@@ -19,7 +19,7 @@ fi
 
 mkdir -p "$proj/bin" "$proj/script"
 
-for rel in bin/kanban bin/lane script/shard_kanban.rb script/rollup_kanban.rb; do
+for rel in bin/kanban bin/lane bin/swarm script/shard_kanban.rb script/rollup_kanban.rb script/planning_guard.rb; do
   src="$tpl/$rel"
   dest="$proj/$rel"
   if [ -e "$dest" ]; then
@@ -30,7 +30,7 @@ for rel in bin/kanban bin/lane script/shard_kanban.rb script/rollup_kanban.rb; d
   fi
 done
 
-chmod +x "$proj/bin/kanban" "$proj/bin/lane" 2>/dev/null || true
+chmod +x "$proj/bin/kanban" "$proj/bin/lane" "$proj/bin/swarm" 2>/dev/null || true
 
 if [ -x "$proj/bin/kanban" ]; then
   ( cd "$proj" && ./bin/kanban init )

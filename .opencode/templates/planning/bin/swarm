@@ -13,6 +13,7 @@
 #   bin/swarm list                              # active swarms
 #   bin/swarm env <n>                           # shell exports for swarm N
 #   bin/swarm run <n> -- <cmd...>               # run a command in swarm N's worktree
+#   bin/swarm sync <n> [--base REF]             # rebase on base; moves planning aside (never stash)
 #   bin/swarm finish <n> [--force]              # remove worktree + branch + drop DBs
 #
 # Isolation unit is the SWARM, not the lane. The lane is just a label carried
@@ -22,6 +23,8 @@
 require "json"
 require "fileutils"
 require "optparse"
+
+require_relative "../script/planning_guard"
 
 ROOT     = File.expand_path("..", __dir__)
 APP      = File.basename(ROOT).gsub(/[^a-zA-Z0-9_]/, "_")
@@ -186,6 +189,35 @@ def finish(n, force)
   puts "Finished swarm ##{n}."
 end
 
+# Warn that the stash stack is repo-global — the reason this repo has a `sync`
+# command instead of stashing planning edits.
+def warn_shared_stash
+  out = `git -C #{ROOT} stash list 2>/dev/null`
+  return if out.strip.empty?
+
+  warn "  ! refs/stash is shared by ALL worktrees and is non-empty:"
+  out.each_line { |l| warn "      #{l.chomp}" }
+  warn "    Don't `git stash` in a swarm — run `bin/swarm sync` instead (moves planning aside)."
+end
+
+def sync(n, base)
+  s = find_swarm(n)
+  wt = s["worktree"]
+  abort "Worktree missing: #{wt}" unless File.directory?(wt)
+
+  warn_shared_stash
+  system("git", "-C", wt, "fetch", "origin") unless ENV["SWARM_NO_FETCH"] == "1"
+
+  ok = false
+  PlanningGuard.with_aside(wt) do
+    ok = system("git", "-C", wt, "rebase", "origin/#{base}")
+  end
+
+  abort "rebase failed — resolve conflicts in #{wt}, then `git -C #{wt} rebase --continue`" unless ok
+
+  puts "Swarm ##{n} rebased on origin/#{base} (planning changes preserved; no stash used)."
+end
+
 command = ARGV.shift
 case command
 when "start"
@@ -203,10 +235,14 @@ when "run"
   n = ARGV.shift
   ARGV.shift if ARGV.first == "--"
   run(n, ARGV)
+when "sync"
+  opts = {}
+  OptionParser.new { |o| o.on("--base REF") { |v| opts[:base] = v } }.parse!(ARGV)
+  sync(ARGV.shift, opts[:base] || "main")
 when "finish"
   force = false
   OptionParser.new { |o| o.on("--force") { force = true } }.parse!(ARGV)
   finish(ARGV.shift, force)
 else
-  abort "Unknown command '#{command}'. See bin/swarm (start|list|env|run|finish)."
+  abort "Unknown command '#{command}'. See bin/swarm (start|list|env|run|sync|finish)."
 end

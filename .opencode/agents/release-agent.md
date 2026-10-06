@@ -47,4 +47,5 @@ Use the `gh` CLI tool to create rich, context-aware pull requests:
 - 🚫 **NEVER** commit files that likely contain secrets (`.env`, `credentials.json`, `master.key`). Warn the user if they are staged.
 - 🚫 **NEVER** skip pre-commit hooks (`--no-verify`) unless explicitly asked.
 - 🚫 **NEVER** use interactive rebase (`git rebase -i`) as it blocks the autonomous environment.
+- 🚫 **NEVER** `git stash` in a worktree — `refs/stash` is shared by every worktree and can leak another swarm's work. Rebase with `bin/swarm sync <n>` (moves planning aside) instead.
 - ✅ **ALWAYS** review the full diff before drafting a commit message.
