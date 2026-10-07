@@ -22,6 +22,24 @@ bin/lane  sync <lane> [--base main]   # lane worktree
 
 These move the dirty planning paths aside, rebase, and put them back — no stash.
 
+## `bin/swarm finish` hook
+`bin/swarm finish` runs `script/reconcile_swarm.rb` (if the project provides it) **before**
+it removes the worktree. The scaffold ships no reconcile script — a project implements one
+to preserve its lane planning artifacts and update its own backlog. Inputs arrive via the
+environment:
+
+```
+SWARM_N          swarm number
+SWARM_LANE       lane label
+SWARM_WORKTREE   the swarm worktree path
+SWARM_MAIN       the main (integration) checkout path
+SWARM_MERGED     "1" if the branch is merged into main, else "0"
+```
+
+`--no-reconcile` skips the hook; a non-zero hook exit **aborts teardown** so nothing is lost.
+The hook writes to the integration checkout only — the resulting changes still land through
+the normal reconciliation PR.
+
 ## Usage
 ```sh
 planning-init /path/to/project   # copies missing files, then runs bin/kanban init

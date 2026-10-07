@@ -85,11 +85,36 @@ A swarm **cannot remove its own worktree while its session is inside it**, so:
 
 1. **Relocate the session back to the main checkout** (the integration lane).
 2. Run `bin/swarm finish <n>`. It refuses if the branch is not merged into `main` — pass
-   `--force` only to discard abandoned work. It removes the worktree, deletes the branch,
-   and drops the swarm's databases.
+   `--force` only to discard abandoned work. **Before teardown it runs the project's
+   reconcile hook** (`script/reconcile_swarm.rb`, if present) to preserve the swarm's lane
+   planning artifacts and record shipped tickets; `--no-reconcile` skips it, and a hook
+   failure aborts teardown so nothing is lost. Then it removes the worktree, deletes the
+   branch, and drops the swarm's databases.
 
 `@project-manager` / the release agent may also sweep finished swarms: `bin/swarm list`,
 then `bin/swarm finish <n>`. Never finish a swarm whose workspace is still active.
+
+## Reconcile (planning board lands via PR)
+
+`@project-manager` reconciles the finished swarm's lane artifacts into the integration
+lane — but the reconciliation is **itself landed through a pull request**, never a direct
+push to `main`.
+
+- `bin/swarm finish` performs the artifact copy (and any project backlog annotation) into
+  the integration checkout, but it **never commits** — the resulting `docs/planning/**`
+  changes still land through the PR flow below.
+- **Never** commit `docs/planning/**` straight to `main`, and **never** set
+  `ALLOW_MAIN_PUSH=1` (or otherwise bypass `.githooks/pre-push`). The hook exists because
+  direct `main` pushes skip review and the `lanes.yml` board guard, and once exhausted the
+  repo's Actions budget. A direct push is a process violation even when the content is
+  docs-only.
+- Flow: branch off `origin/main` → apply the reconciliation → push the branch → open a PR
+  (the cheap, dependency-free `lanes.yml` guard runs on `docs/planning/**`) → merge.
+- If more artifacts land in the live checkout after a sweep, run a follow-up sweep through
+  the same PR flow; do not "top up" with a direct push.
+- The merged code PR and the planning-reconciliation PR are separate: the code PR is opened
+  from the swarm branch; the reconciliation PR is opened from the integration lane by
+  `@project-manager`.
 
 ## Commands
 
@@ -109,4 +134,6 @@ bin/swarm finish <n> [--force]              # teardown (merged-branch guard unle
 - A swarm writes only its own lane shard, inside its own worktree.
 - Never commit planning from a swarm branch; the global board is a read-only rollup owned
   by `@project-manager`.
+- Planning reconciliation reaches `main` **only via a PR** — never a direct push, never
+  `ALLOW_MAIN_PUSH=1`.
 - The user types no CLI — you run `bin/swarm`, `bin/lane`, and `bin/kanban`.

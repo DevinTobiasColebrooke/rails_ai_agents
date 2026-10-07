@@ -14,7 +14,7 @@
 #   bin/swarm env <n>                           # shell exports for swarm N
 #   bin/swarm run <n> -- <cmd...>               # run a command in swarm N's worktree
 #   bin/swarm sync <n> [--base REF]             # rebase on base; moves planning aside (never stash)
-#   bin/swarm finish <n> [--force]              # remove worktree + branch + drop DBs
+#   bin/swarm finish <n> [--force] [--no-reconcile]  # reconcile, then remove worktree + branch + drop DBs
 #
 # Isolation unit is the SWARM, not the lane. The lane is just a label carried
 # on `.lane` so planning resolves to docs/planning/lanes/<lane>/ (each swarm has
@@ -57,7 +57,7 @@ def read_registry
   File.exist?(path) ? JSON.parse(File.read(path)) : { "next_n" => 1, "swarms" => {} }
 end
 
-def start(lane, prepare)
+def start(lane, prepare, base = nil)
   lane = (lane || "default").gsub(/[^a-zA-Z0-9_-]/, "")
   swarm = with_registry do |reg|
     n = reg["next_n"]
@@ -83,7 +83,26 @@ def start(lane, prepare)
   wt = swarm["worktree"]
   abort "Swarm workspace already exists: #{wt}" if File.directory?(wt)
 
-  unless system("git", "-C", ROOT, "worktree", "add", "-b", swarm["branch"], wt, "main")
+  # T-9400 — base new worktrees on the UP-TO-DATE integration ref. Fetch first so
+  # a stale local `main` can never seed a swarm (the bug this fixes: swarms used
+  # to branch from local `main`, which could be many commits behind origin/main).
+  #   * `--base REF` / `SWARM_BASE` overrides the ref;
+  #   * `SWARM_NO_FETCH=1` skips the fetch (offline);
+  #   * falls back to local `main` when `origin/main` is unavailable.
+  base ||= ENV["SWARM_BASE"]
+  base = nil if base&.empty?
+  if base.nil?
+    unless ENV["SWARM_NO_FETCH"] == "1"
+      fetched = system("git", "-C", ROOT, "fetch", "origin", "main", err: File::NULL)
+      warn("  (git fetch origin main failed — using the local origin/main ref)") unless fetched
+    end
+    base = system("git", "-C", ROOT, "rev-parse", "--verify", "--quiet", "origin/main",
+                  out: File::NULL, err: File::NULL) ? "origin/main" : "main"
+  end
+
+  # `--no-track`: the swarm branch must not implicitly track origin/main (the old
+  # local-`main` start point did not set tracking).
+  unless system("git", "-C", ROOT, "worktree", "add", "--no-track", "-b", swarm["branch"], wt, base)
     abort "git worktree add failed"
   end
 
@@ -163,18 +182,34 @@ def run(n, cmd)
        *cmd, chdir: s["worktree"])
 end
 
-def finish(n, force)
+def reconcile_before_teardown(s, merged)
+  hook = File.join(ROOT, "script", "reconcile_swarm.rb")
+  return true unless File.exist?(hook)
+  return true unless File.directory?(s["worktree"])
+
+  env = { "SWARM_N" => s["n"].to_s, "SWARM_LANE" => s["lane"],
+          "SWARM_WORKTREE" => s["worktree"], "SWARM_MAIN" => ROOT,
+          "SWARM_MERGED" => merged ? "1" : "0" }
+  return true if system(env, "ruby", hook)
+
+  warn "  ! reconcile failed — keeping swarm ##{s["n"]}'s worktree so nothing is lost."
+  false
+end
+
+def finish(n, force, reconcile)
   s = read_registry["swarms"][n.to_s] or abort "Unknown swarm ##{n}. See: bin/swarm list"
 
   branch_exists = system("git", "-C", ROOT, "rev-parse", "--verify", "--quiet", s["branch"],
                          out: File::NULL, err: File::NULL)
-  if branch_exists && !force
-    merged = system("git", "-C", ROOT, "merge-base", "--is-ancestor", s["branch"], "main",
-                    out: File::NULL, err: File::NULL)
-    unless merged
-      abort "Swarm ##{n}'s branch #{s["branch"]} is not merged into main. " \
-            "Merge the PR first, or pass --force to discard the work."
-    end
+  merged = branch_exists && system("git", "-C", ROOT, "merge-base", "--is-ancestor", s["branch"], "main",
+                                   out: File::NULL, err: File::NULL)
+  if branch_exists && !force && !merged
+    abort "Swarm ##{n}'s branch #{s["branch"]} is not merged into main. " \
+          "Merge the PR first, or pass --force to discard the work."
+  end
+
+  if reconcile && !reconcile_before_teardown(s, merged)
+    abort "Reconcile failed; nothing was torn down. Fix it, or re-run with --no-reconcile."
   end
 
   with_registry { |reg| reg["swarms"].delete(n.to_s) }
@@ -224,9 +259,10 @@ when "start"
   opts = {}
   OptionParser.new do |o|
     o.on("--lane NAME") { |v| opts[:lane] = v }
+    o.on("--base REF") { |v| opts[:base] = v }
     o.on("--prepare") { opts[:prepare] = true }
   end.parse!(ARGV)
-  start(opts[:lane], opts[:prepare])
+  start(opts[:lane], opts[:prepare], opts[:base])
 when "list", nil
   list
 when "env"
@@ -241,8 +277,12 @@ when "sync"
   sync(ARGV.shift, opts[:base] || "main")
 when "finish"
   force = false
-  OptionParser.new { |o| o.on("--force") { force = true } }.parse!(ARGV)
-  finish(ARGV.shift, force)
+  reconcile = true
+  OptionParser.new do |o|
+    o.on("--force") { force = true }
+    o.on("--no-reconcile") { reconcile = false }
+  end.parse!(ARGV)
+  finish(ARGV.shift, force, reconcile)
 else
   abort "Unknown command '#{command}'. See bin/swarm (start|list|env|run|sync|finish)."
 end
