@@ -60,8 +60,9 @@ per task — and types no CLI.** You (the autopilot) own all isolation.
    passing the lane root in every subagent dispatch.
 4. Commit **code only** and open a PR — never commit `docs/planning/**`.
 5. **After the PR merges, clean up:** relocate the session back to the main checkout, then
-   run `bin/swarm finish <n>` (removes the worktree, branch, and databases). A swarm
-   cannot remove its own worktree while inside it — relocate first.
+   run `bin/swarm finish <n>` — it reconciles the swarm's planning via the project hook
+   (`script/reconcile_swarm.rb`, if present), then removes the worktree, branch, and
+   databases. A swarm cannot remove its own worktree while inside it — relocate first.
 
 To rebase a swarm mid-flight, run `bin/swarm sync <n>` — it moves the uncommitted
 `docs/planning/**` edits aside, rebases, and restores them. **Never `git stash`**:
